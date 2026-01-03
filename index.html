@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>每日打卡</title>
+    <style>
+        :root {
+            --primary: #34C759; /* iOS Green */
+            --bg: #F2F2F7;
+            --card: #FFFFFF;
+            --text: #1C1C1E;
+            --gray: #8E8E93;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            -webkit-tap-highlight-color: transparent;
+        }
+        h1 { font-size: 24px; font-weight: 700; margin-bottom: 20px; }
+        
+        /* 大按钮 */
+        .check-btn {
+            width: 160px;
+            height: 160px;
+            border-radius: 50%;
+            border: none;
+            background: var(--card);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--gray);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify_content: center;
+            margin-bottom: 30px;
+        }
+        .check-btn.checked {
+            background: var(--primary);
+            color: white;
+            box-shadow: 0 4px 20px rgba(52, 199, 89, 0.4);
+            transform: scale(1.05);
+        }
+        .check-btn span { font-size: 40px; margin-bottom: 5px; }
+
+        /* 卡片容器 */
+        .card {
+            background: var(--card);
+            border-radius: 16px;
+            padding: 20px;
+            width: 100%;
+            max-width: 350px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+        }
+        .card-header { font-size: 18px; font-weight: 600; margin-bottom: 15px; }
+
+        /* 日历视图 */
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 8px;
+            text-align: center;
+        }
+        .day {
+            width: 32px;
+            height: 32px;
+            line-height: 32px;
+            border-radius: 50%;
+            font-size: 14px;
+            color: var(--text);
+        }
+        .day.active { background: var(--primary); color: white; }
+        .day.today { border: 2px solid var(--primary); line-height: 28px; }
+        .day.empty { visibility: hidden; }
+        .week-names {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            text-align: center;
+            font-size: 12px;
+            color: var(--gray);
+            margin-bottom: 10px;
+        }
+
+        /* 热力图 */
+        .heatmap {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 3px;
+        }
+        .heat-dot {
+            width: 10px;
+            height: 10px;
+            background: #E5E5EA;
+            border-radius: 2px;
+        }
+        .heat-dot.active { background: var(--primary); opacity: 0.8; }
+        
+    </style>
+</head>
+<body>
+
+    <h1>Keep Going</h1>
+
+    <button id="mainBtn" class="check-btn" onclick="toggleToday()">
+        <span>⚡️</span>
+        <div id="btnText">点击打卡</div>
+    </button>
+
+    <div class="card">
+        <div class="card-header" id="monthTitle">本月视图</div>
+        <div class="week-names">
+            <div>日</div><div>一</div><div>二</div><div>三</div><div>四</div><div>五</div><div>六</div>
+        </div>
+        <div class="calendar-grid" id="calendar"></div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">年度热力 (最近365天)</div>
+        <div class="heatmap" id="heatmap"></div>
+    </div>
+
+    <script>
+        const STORAGE_KEY = 'phoebe_habit_log';
+        let records = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); // 存储格式: {'2025-01-03': true}
+
+        function getTodayStr() {
+            const d = new Date();
+            const year = d.getFullYear();
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        function toggleToday() {
+            const today = getTodayStr();
+            if (records[today]) {
+                delete records[today];
+            } else {
+                records[today] = true;
+            }
+            saveAndRender();
+        }
+
+        function saveAndRender() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+            renderButton();
+            renderCalendar();
+            renderHeatmap();
+        }
+
+        function renderButton() {
+            const btn = document.getElementById('mainBtn');
+            const txt = document.getElementById('btnText');
+            const today = getTodayStr();
+            
+            if (records[today]) {
+                btn.classList.add('checked');
+                txt.innerText = '已完成';
+            } else {
+                btn.classList.remove('checked');
+                txt.innerText = '点击打卡';
+            }
+        }
+
+        function renderCalendar() {
+            const now = new Date();
+            document.getElementById('monthTitle').innerText = `${now.getMonth() + 1}月视图`;
+            const container = document.getElementById('calendar');
+            container.innerHTML = '';
+
+            const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+            const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+            const startDay = firstDay.getDay(); // 0 is Sunday
+
+            // 空白占位
+            for (let i = 0; i < startDay; i++) {
+                const div = document.createElement('div');
+                div.className = 'day empty';
+                container.appendChild(div);
+            }
+
+            // 日期格子
+            for (let i = 1; i <= daysInMonth; i++) {
+                const div = document.createElement('div');
+                div.className = 'day';
+                div.innerText = i;
+                
+                const dateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
+                
+                if (records[dateStr]) div.classList.add('active');
+                if (dateStr === getTodayStr()) div.classList.add('today');
+                
+                container.appendChild(div);
+            }
+        }
+
+        function renderHeatmap() {
+            const container = document.getElementById('heatmap');
+            container.innerHTML = '';
+            const now = new Date();
+            // 生成过去一年的点
+            for (let i = 365; i >= 0; i--) {
+                const d = new Date();
+                d.setDate(now.getDate() - i);
+                const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+                
+                const dot = document.createElement('div');
+                dot.className = 'heat-dot';
+                if (records[dateStr]) dot.classList.add('active');
+                container.appendChild(dot);
+            }
+        }
+
+        // 初始化
+        saveAndRender();
+    </script>
+</body>
+</html>
