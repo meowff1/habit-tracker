@@ -13,6 +13,7 @@
             --card: #FFFFFF;
             --text: #1C1C1E;
             --gray: #8E8E93;
+            --light-gray: #E5E5EA;
         }
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -25,85 +26,127 @@
             align-items: center;
             min-height: 100vh;
             -webkit-tap-highlight-color: transparent;
+            user-select: none; /* 防止长按选中文本 */
         }
-        h1 { font-size: 24px; font-weight: 700; margin-bottom: 20px; }
         
-        /* 大按钮 */
+        /* 标题 */
+        h1 { 
+            font-size: 20px; 
+            font-weight: 600; 
+            margin-bottom: 30px; 
+            color: var(--gray);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        
+        /* 1. 大按钮 (完美居中) */
         .check-btn {
-            width: 160px;
-            height: 160px;
+            width: 180px;
+            height: 180px;
             border-radius: 50%;
             border: none;
             background: var(--card);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            font-size: 18px;
-            font-weight: 600;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+            font-size: 22px;
+            font-weight: 800; /* 加粗 */
             color: var(--gray);
-            transition: all 0.3s ease;
+            transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
             cursor: pointer;
             display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify_content: center;
-            margin-bottom: 30px;
+            align-items: center;     /* 垂直居中 */
+            justify-content: center; /* 水平居中 */
+            margin-bottom: 40px;
+            position: relative;
         }
+        /* 点击态 */
+        .check-btn:active { transform: scale(0.95); }
+        
+        /* 已完成态 */
         .check-btn.checked {
             background: var(--primary);
             color: white;
-            box-shadow: 0 4px 20px rgba(52, 199, 89, 0.4);
-            transform: scale(1.05);
+            box-shadow: 0 8px 30px rgba(52, 199, 89, 0.5);
         }
-        .check-btn span { font-size: 40px; margin-bottom: 5px; }
 
-        /* 卡片容器 */
+        /* 2. 卡片容器 */
         .card {
             background: var(--card);
-            border-radius: 16px;
+            border-radius: 20px;
             padding: 20px;
             width: 100%;
-            max-width: 350px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            max-width: 360px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.03);
             margin-bottom: 20px;
         }
-        .card-header { font-size: 18px; font-weight: 600; margin-bottom: 15px; }
 
-        /* 日历视图 */
+        /* 月视图头部 (带翻页) */
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding: 0 5px;
+        }
+        .month-title { font-size: 17px; font-weight: 700; }
+        .nav-btn {
+            background: none;
+            border: none;
+            font-size: 20px;
+            color: var(--primary);
+            padding: 5px 10px;
+            cursor: pointer;
+        }
+
+        /* 日历网格 */
         .calendar-grid {
             display: grid;
             grid-template-columns: repeat(7, 1fr);
-            gap: 8px;
+            gap: 10px; /* 增加间距 */
             text-align: center;
         }
         .day {
-            width: 32px;
-            height: 32px;
-            line-height: 32px;
+            width: 36px;
+            height: 36px;
+            line-height: 36px;
             border-radius: 50%;
-            font-size: 14px;
+            font-size: 15px;
             color: var(--text);
+            background: transparent;
+            cursor: pointer;
+            transition: background 0.2s;
         }
-        .day.active { background: var(--primary); color: white; }
-        .day.today { border: 2px solid var(--primary); line-height: 28px; }
-        .day.empty { visibility: hidden; }
+        /* 打卡状态 */
+        .day.active { background: var(--primary); color: white; font-weight: 600; }
+        /* 今天的高亮边框 */
+        .day.today-border { border: 2px solid var(--primary); line-height: 32px; box-sizing: border-box; }
+        /* 没打卡的今天 */
+        .day.today-border:not(.active) { color: var(--primary); }
+        
         .week-names {
             display: grid;
             grid-template-columns: repeat(7, 1fr);
             text-align: center;
             font-size: 12px;
             color: var(--gray);
-            margin-bottom: 10px;
+            margin-bottom: 12px;
+            font-weight: 500;
         }
 
-        /* 热力图 */
+        /* 年度热力图 */
+        .heatmap-container {
+            overflow-x: auto; /* 允许横向滑动 */
+            padding-bottom: 5px;
+        }
         .heatmap {
             display: flex;
             flex-wrap: wrap;
-            gap: 3px;
+            gap: 4px;
+            justify-content: flex-start;
         }
         .heat-dot {
             width: 10px;
             height: 10px;
-            background: #E5E5EA;
+            background: var(--light-gray);
             border-radius: 2px;
         }
         .heat-dot.active { background: var(--primary); opacity: 0.8; }
@@ -112,15 +155,18 @@
 </head>
 <body>
 
-    <h1>Keep Going</h1>
+    <h1>Habit Tracker</h1>
 
-    <button id="mainBtn" class="check-btn" onclick="toggleToday()">
-        <span>⚡️</span>
+    <button id="mainBtn" class="check-btn" onclick="toggleTodayFromBtn()">
         <div id="btnText">点击打卡</div>
     </button>
 
     <div class="card">
-        <div class="card-header" id="monthTitle">本月视图</div>
+        <div class="calendar-header">
+            <button class="nav-btn" onclick="changeMonth(-1)">❮</button>
+            <div class="month-title" id="monthTitle">2024年 1月</div>
+            <button class="nav-btn" onclick="changeMonth(1)">❯</button>
+        </div>
         <div class="week-names">
             <div>日</div><div>一</div><div>二</div><div>三</div><div>四</div><div>五</div><div>六</div>
         </div>
@@ -128,30 +174,47 @@
     </div>
 
     <div class="card">
-        <div class="card-header">年度热力 (最近365天)</div>
-        <div class="heatmap" id="heatmap"></div>
+        <div style="font-size: 14px; font-weight: 600; margin-bottom: 10px; color: var(--gray);">过去一年热力</div>
+        <div class="heatmap-container">
+            <div class="heatmap" id="heatmap"></div>
+        </div>
     </div>
 
     <script>
-        const STORAGE_KEY = 'phoebe_habit_log';
-        let records = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); // 存储格式: {'2025-01-03': true}
+        const STORAGE_KEY = 'phoebe_habit_log_v2';
+        let records = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); 
+        
+        // 当前浏览的月份 (默认为今天所在月份)
+        let currentViewDate = new Date();
 
-        function getTodayStr() {
-            const d = new Date();
-            const year = d.getFullYear();
-            const month = String(d.getMonth() + 1).padStart(2, '0');
-            const day = String(d.getDate()).padStart(2, '0');
-            return `${year}-${month}-${day}`;
+        // 获取格式化日期字串 'YYYY-MM-DD'
+        function formatDateStr(date) {
+            const y = date.getFullYear();
+            const m = String(date.getMonth() + 1).padStart(2, '0');
+            const d = String(date.getDate()).padStart(2, '0');
+            return `${y}-${m}-${d}`;
         }
 
-        function toggleToday() {
-            const today = getTodayStr();
-            if (records[today]) {
-                delete records[today];
+        // 1. 切换某一日期的状态 (通用函数)
+        function toggleDate(dateStr) {
+            if (records[dateStr]) {
+                delete records[dateStr];
             } else {
-                records[today] = true;
+                records[dateStr] = true;
             }
             saveAndRender();
+        }
+
+        // 2. 大按钮专用：只切换“今天”
+        function toggleTodayFromBtn() {
+            const todayStr = formatDateStr(new Date());
+            toggleDate(todayStr);
+        }
+
+        // 3. 翻页月份
+        function changeMonth(offset) {
+            currentViewDate.setMonth(currentViewDate.getMonth() + offset);
+            renderCalendar(); // 只刷新日历部分
         }
 
         function saveAndRender() {
@@ -161,12 +224,13 @@
             renderHeatmap();
         }
 
+        // 渲染大按钮状态
         function renderButton() {
             const btn = document.getElementById('mainBtn');
             const txt = document.getElementById('btnText');
-            const today = getTodayStr();
+            const todayStr = formatDateStr(new Date());
             
-            if (records[today]) {
+            if (records[todayStr]) {
                 btn.classList.add('checked');
                 txt.innerText = '已完成';
             } else {
@@ -175,56 +239,70 @@
             }
         }
 
+        // 渲染日历 (核心逻辑)
         function renderCalendar() {
-            const now = new Date();
-            document.getElementById('monthTitle').innerText = `${now.getMonth() + 1}月视图`;
+            const year = currentViewDate.getFullYear();
+            const month = currentViewDate.getMonth();
+            const todayStr = formatDateStr(new Date()); // 真实的今天
+
+            document.getElementById('monthTitle').innerText = `${year}年 ${month + 1}月`;
+            
             const container = document.getElementById('calendar');
             container.innerHTML = '';
 
-            const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
-            const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-            const startDay = firstDay.getDay(); // 0 is Sunday
+            // 计算当月第一天是周几
+            const firstDay = new Date(year, month, 1);
+            const startDay = firstDay.getDay(); 
+            // 计算当月有多少天
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
 
-            // 空白占位
+            // 填充前面的空白
             for (let i = 0; i < startDay; i++) {
                 const div = document.createElement('div');
-                div.className = 'day empty';
+                div.style.visibility = 'hidden';
                 container.appendChild(div);
             }
 
-            // 日期格子
+            // 填充日期
             for (let i = 1; i <= daysInMonth; i++) {
                 const div = document.createElement('div');
                 div.className = 'day';
                 div.innerText = i;
                 
-                const dateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
+                const currentStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
                 
-                if (records[dateStr]) div.classList.add('active');
-                if (dateStr === getTodayStr()) div.classList.add('today');
+                // 状态判断
+                if (records[currentStr]) div.classList.add('active');
+                if (currentStr === todayStr) div.classList.add('today-border');
+                
+                // 点击事件：支持补卡/修改
+                div.onclick = () => toggleDate(currentStr);
                 
                 container.appendChild(div);
             }
         }
 
+        // 渲染底部热力条 (展示最近100天，避免太长)
         function renderHeatmap() {
             const container = document.getElementById('heatmap');
             container.innerHTML = '';
             const now = new Date();
-            // 生成过去一年的点
-            for (let i = 365; i >= 0; i--) {
+            
+            // 显示过去 4 个月左右的热力图
+            for (let i = 119; i >= 0; i--) {
                 const d = new Date();
                 d.setDate(now.getDate() - i);
-                const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+                const dateStr = formatDateStr(d);
                 
                 const dot = document.createElement('div');
                 dot.className = 'heat-dot';
                 if (records[dateStr]) dot.classList.add('active');
+                // 热力图也可以点击补卡？(可选，这里暂不加点击以免误触)
                 container.appendChild(dot);
             }
         }
 
-        // 初始化
+        // 初始化运行
         saveAndRender();
     </script>
 </body>
