@@ -5,15 +5,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>🔮</title>
+    <title>Phoebe's Log</title>
     <style>
         :root {
-            --primary: #34C759; /* iOS Green */
             --bg: #F2F2F7;
             --card: #FFFFFF;
             --text: #1C1C1E;
             --gray: #8E8E93;
-            --light-gray: #E5E5EA;
+            /* 心情颜色 */
+            --mood-happy: #FFD60A; /* 黄色-开心 */
+            --mood-normal: #34C759; /* 绿色-平静 */
+            --mood-sad: #5AC8FA;   /* 蓝色-低落 */
+            --mood-angry: #FF453A; /* 红色-生气 */
+            --mood-tired: #BF5AF2; /* 紫色-累 */
+            --mood-none: #E5E5EA;  /* 没选心情 */
         }
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -26,49 +31,56 @@
             align-items: center;
             min-height: 100vh;
             -webkit-tap-highlight-color: transparent;
-            user-select: none; /* 防止长按选中文本 */
+            user-select: none;
         }
-        
-        /* 标题 */
-        h1 { 
-            font-size: 20px; 
-            font-weight: 600; 
-            margin-bottom: 30px; 
-            color: var(--gray);
-            letter-spacing: 1px;
-            text-transform: uppercase;
-        }
-        
-        /* 1. 大按钮 (完美居中) */
+
+        h1 { font-size: 20px; font-weight: 600; margin-bottom: 20px; color: var(--gray); text-transform: uppercase; letter-spacing: 1px;}
+
+        /* 1. 大按钮 (打卡) */
         .check-btn {
-            width: 180px;
-            height: 180px;
+            width: 140px;
+            height: 140px;
             border-radius: 50%;
             border: none;
             background: var(--card);
-            box-shadow: 0 8px 24px rgba(0,0,0,0.08);
-            font-size: 22px;
-            font-weight: 800; /* 加粗 */
+            box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+            font-size: 18px;
+            font-weight: 700;
             color: var(--gray);
-            transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+            transition: all 0.2s;
             cursor: pointer;
+            margin-bottom: 20px;
             display: flex;
-            align-items: center;     /* 垂直居中 */
-            justify-content: center; /* 水平居中 */
-            margin-bottom: 40px;
-            position: relative;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
         }
-        /* 点击态 */
         .check-btn:active { transform: scale(0.95); }
-        
-        /* 已完成态 */
         .check-btn.checked {
-            background: var(--primary);
-            color: white;
-            box-shadow: 0 8px 30px rgba(52, 199, 89, 0.5);
+            border: 4px solid var(--mood-normal); /* 打卡后给个绿色边框 */
+            color: var(--text);
         }
+        .check-btn span { font-size: 32px; margin-bottom: 5px; }
 
-        /* 2. 卡片容器 */
+        /* 2. 心情选择条 */
+        .mood-bar {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+            background: var(--card);
+            padding: 10px 20px;
+            border-radius: 50px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+        .mood-opt {
+            font-size: 28px;
+            cursor: pointer;
+            transition: transform 0.2s;
+            opacity: 0.5;
+        }
+        .mood-opt.selected { opacity: 1; transform: scale(1.3); }
+
+        /* 3. 卡片容器 */
         .card {
             background: var(--card);
             border-radius: 20px;
@@ -79,7 +91,7 @@
             margin-bottom: 20px;
         }
 
-        /* 月视图头部 (带翻页) */
+        /* 月视图头部 */
         .calendar-header {
             display: flex;
             justify-content: space-between;
@@ -88,39 +100,50 @@
             padding: 0 5px;
         }
         .month-title { font-size: 17px; font-weight: 700; }
-        .nav-btn {
-            background: none;
-            border: none;
-            font-size: 20px;
-            color: var(--primary);
-            padding: 5px 10px;
-            cursor: pointer;
-        }
+        .nav-btn { background: none; border: none; font-size: 20px; color: var(--gray); padding: 5px 10px; cursor: pointer; }
 
         /* 日历网格 */
         .calendar-grid {
             display: grid;
             grid-template-columns: repeat(7, 1fr);
-            gap: 10px; /* 增加间距 */
+            gap: 8px;
             text-align: center;
         }
         .day {
             width: 36px;
             height: 36px;
             line-height: 36px;
-            border-radius: 50%;
-            font-size: 15px;
+            border-radius: 12px; /* 方形圆角 */
+            font-size: 14px;
             color: var(--text);
             background: transparent;
+            position: relative;
             cursor: pointer;
-            transition: background 0.2s;
         }
-        /* 打卡状态 */
-        .day.active { background: var(--primary); color: white; font-weight: 600; }
+        
+        /* 心情背景色 */
+        .day[data-mood="happy"] { background: var(--mood-happy); }
+        .day[data-mood="normal"] { background: var(--mood-normal); color: white; }
+        .day[data-mood="sad"] { background: var(--mood-sad); color: white; }
+        .day[data-mood="angry"] { background: var(--mood-angry); color: white; }
+        .day[data-mood="tired"] { background: var(--mood-tired); color: white; }
+
+        /* 打卡标记 (小圆点) */
+        .day.has-check::after {
+            content: '';
+            position: absolute;
+            bottom: 4px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            background-color: currentColor; /* 跟随字体颜色 */
+            opacity: 0.8;
+        }
+        
         /* 今天的高亮边框 */
-        .day.today-border { border: 2px solid var(--primary); line-height: 32px; box-sizing: border-box; }
-        /* 没打卡的今天 */
-        .day.today-border:not(.active) { color: var(--primary); }
+        .day.today-border { border: 2px solid #000; box-sizing: border-box; line-height: 32px; }
         
         .week-names {
             display: grid;
@@ -131,40 +154,29 @@
             margin-bottom: 12px;
             font-weight: 500;
         }
-
-        /* 年度热力图 */
-        .heatmap-container {
-            overflow-x: auto; /* 允许横向滑动 */
-            padding-bottom: 5px;
-        }
-        .heatmap {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 4px;
-            justify-content: flex-start;
-        }
-        .heat-dot {
-            width: 10px;
-            height: 10px;
-            background: var(--light-gray);
-            border-radius: 2px;
-        }
-        .heat-dot.active { background: var(--primary); opacity: 0.8; }
-        
     </style>
 </head>
 <body>
 
-    <h1>一切有为法,如梦幻泡影</h1>
+    <h1>PHOEBE'S LOG</h1>
 
-    <button id="mainBtn" class="check-btn" onclick="toggleTodayFromBtn()">
-        <div id="btnText">点击打卡</div>
+    <button id="mainBtn" class="check-btn" onclick="toggleCheck()">
+        <span id="btnIcon">⚡️</span>
+        <div id="btnText">打卡</div>
     </button>
+
+    <div class="mood-bar">
+        <div class="mood-opt" onclick="setMood('happy')" title="开心">🥰</div>
+        <div class="mood-opt" onclick="setMood('normal')" title="平静">😐</div>
+        <div class="mood-opt" onclick="setMood('sad')" title="焦虑/低落">☹️</div>
+        <div class="mood-opt" onclick="setMood('angry')" title="烦躁">😡</div>
+        <div class="mood-opt" onclick="setMood('tired')" title="累">🫠</div>
+    </div>
 
     <div class="card">
         <div class="calendar-header">
             <button class="nav-btn" onclick="changeMonth(-1)">❮</button>
-            <div class="month-title" id="monthTitle">2024年 1月</div>
+            <div class="month-title" id="monthTitle"></div>
             <button class="nav-btn" onclick="changeMonth(1)">❯</button>
         </div>
         <div class="week-names">
@@ -173,137 +185,134 @@
         <div class="calendar-grid" id="calendar"></div>
     </div>
 
-    <div class="card">
-        <div style="font-size: 14px; font-weight: 600; margin-bottom: 10px; color: var(--gray);">过去一年热力</div>
-        <div class="heatmap-container">
-            <div class="heatmap" id="heatmap"></div>
-        </div>
-    </div>
-
     <script>
-        const STORAGE_KEY = 'phoebe_habit_log_v2';
+        const STORAGE_KEY = 'phoebe_combo_log_v3';
+        // 数据结构: '2025-01-06': { checked: true, mood: 'happy' }
         let records = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); 
-        
-        // 当前浏览的月份 (默认为今天所在月份)
         let currentViewDate = new Date();
 
-        // 获取格式化日期字串 'YYYY-MM-DD'
         function formatDateStr(date) {
             const y = date.getFullYear();
             const m = String(date.getMonth() + 1).padStart(2, '0');
             const d = String(date.getDate()).padStart(2, '0');
             return `${y}-${m}-${d}`;
         }
+        function getTodayStr() { return formatDateStr(new Date()); }
 
-        // 1. 切换某一日期的状态 (通用函数)
-        function toggleDate(dateStr) {
-            if (records[dateStr]) {
-                delete records[dateStr];
-            } else {
-                records[dateStr] = true;
-            }
+        // 1. 切换打卡
+        function toggleCheck() {
+            const today = getTodayStr();
+            if (!records[today]) records[today] = {};
+            
+            // 切换状态
+            records[today].checked = !records[today].checked;
+            
+            // 如果是取消打卡且没心情，清理空数据
+            if (!records[today].checked && !records[today].mood) delete records[today];
+            
             saveAndRender();
         }
 
-        // 2. 大按钮专用：只切换“今天”
-        function toggleTodayFromBtn() {
-            const todayStr = formatDateStr(new Date());
-            toggleDate(todayStr);
+        // 2. 设置心情
+        function setMood(moodType) {
+            const today = getTodayStr();
+            if (!records[today]) records[today] = {};
+            
+            // 如果点同一个心情，取消选择
+            if (records[today].mood === moodType) {
+                records[today].mood = null;
+            } else {
+                records[today].mood = moodType;
+            }
+
+            if (!records[today].checked && !records[today].mood) delete records[today];
+            saveAndRender();
         }
 
-        // 3. 翻页月份
+        // 3. 翻页
         function changeMonth(offset) {
             currentViewDate.setMonth(currentViewDate.getMonth() + offset);
-            renderCalendar(); // 只刷新日历部分
+            renderCalendar();
         }
 
         function saveAndRender() {
             localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
-            renderButton();
-            renderCalendar();
-            renderHeatmap();
+            renderUI();
         }
 
-        // 渲染大按钮状态
-        function renderButton() {
+        function renderUI() {
+            const todayStr = getTodayStr();
+            const todayData = records[todayStr] || {};
+
+            // 渲染按钮状态
             const btn = document.getElementById('mainBtn');
-            const txt = document.getElementById('btnText');
-            const todayStr = formatDateStr(new Date());
+            const btnText = document.getElementById('btnText');
+            const btnIcon = document.getElementById('btnIcon');
             
-            if (records[todayStr]) {
+            if (todayData.checked) {
                 btn.classList.add('checked');
-                txt.innerText = '已完成';
+                btnText.innerText = '已完成';
+                btnIcon.innerText = '✅';
             } else {
                 btn.classList.remove('checked');
-                txt.innerText = '点击打卡';
+                btnText.innerText = '打卡';
+                btnIcon.innerText = '⚡️';
             }
+
+            // 渲染心情条选中状态
+            document.querySelectorAll('.mood-opt').forEach(el => {
+                el.classList.remove('selected');
+                // 通过 onclick 里的参数反推，这里简单处理：
+                // 如果 click 绑定的 mood 等于当前 mood
+                if (el.getAttribute('onclick').includes(`'${todayData.mood}'`)) {
+                    el.classList.add('selected');
+                }
+            });
+
+            renderCalendar();
         }
 
-        // 渲染日历 (核心逻辑)
         function renderCalendar() {
             const year = currentViewDate.getFullYear();
             const month = currentViewDate.getMonth();
-            const todayStr = formatDateStr(new Date()); // 真实的今天
+            const todayStr = getTodayStr();
 
             document.getElementById('monthTitle').innerText = `${year}年 ${month + 1}月`;
-            
             const container = document.getElementById('calendar');
             container.innerHTML = '';
 
-            // 计算当月第一天是周几
             const firstDay = new Date(year, month, 1);
             const startDay = firstDay.getDay(); 
-            // 计算当月有多少天
             const daysInMonth = new Date(year, month + 1, 0).getDate();
 
-            // 填充前面的空白
             for (let i = 0; i < startDay; i++) {
-                const div = document.createElement('div');
-                div.style.visibility = 'hidden';
-                container.appendChild(div);
+                container.appendChild(document.createElement('div'));
             }
 
-            // 填充日期
             for (let i = 1; i <= daysInMonth; i++) {
                 const div = document.createElement('div');
                 div.className = 'day';
                 div.innerText = i;
                 
-                const currentStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
+                const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
+                const data = records[dateStr];
+
+                if (data) {
+                    if (data.mood) div.setAttribute('data-mood', data.mood);
+                    if (data.checked) div.classList.add('has-check');
+                }
                 
-                // 状态判断
-                if (records[currentStr]) div.classList.add('active');
-                if (currentStr === todayStr) div.classList.add('today-border');
+                if (dateStr === todayStr) div.classList.add('today-border');
                 
-                // 点击事件：支持补卡/修改
-                div.onclick = () => toggleDate(currentStr);
+                // 这里暂时只允许操作今天的心情，日历仅供查看
+                // 也可以加点击事件去补录心情，看你需要
                 
                 container.appendChild(div);
             }
         }
 
-        // 渲染底部热力条 (展示最近100天，避免太长)
-        function renderHeatmap() {
-            const container = document.getElementById('heatmap');
-            container.innerHTML = '';
-            const now = new Date();
-            
-            // 显示过去 4 个月左右的热力图
-            for (let i = 119; i >= 0; i--) {
-                const d = new Date();
-                d.setDate(now.getDate() - i);
-                const dateStr = formatDateStr(d);
-                
-                const dot = document.createElement('div');
-                dot.className = 'heat-dot';
-                if (records[dateStr]) dot.classList.add('active');
-                // 热力图也可以点击补卡？(可选，这里暂不加点击以免误触)
-                container.appendChild(dot);
-            }
-        }
-
-        // 初始化运行
-        saveAndRender();
+        // 启动
+        renderUI();
     </script>
 </body>
 </html>
